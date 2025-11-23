@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accord Pakistan Electrical Mat Selector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .mat-pattern {
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const IEC_CLASSES = [
+            { class: 0, maxUseVoltage: 1000, label: "Class 0", color: "text-red-600", bg: "bg-red-100", tagColor: "#FF0000", thickness: "3mm - 6mm", application: "Low Voltage (LV) DBs, 220V, 400V" },
+            { class: 1, maxUseVoltage: 7500, label: "Class 1", color: "text-gray-600", bg: "bg-gray-100", tagColor: "#FFFFFF", thickness: "3mm - 4mm", application: "Medium Voltage, up to 7.5kV" },
+            { class: 2, maxUseVoltage: 17000, label: "Class 2", color: "text-yellow-600", bg: "bg-yellow-100", tagColor: "#FFD700", thickness: "4mm - 6mm", application: "High Voltage (HT), 11kV Panels" },
+            { class: 3, maxUseVoltage: 26500, label: "Class 3", color: "text-green-600", bg: "bg-green-100", tagColor: "#008000", thickness: "5mm+", application: "High Voltage, up to 26.5kV" },
+            { class: 4, maxUseVoltage: 36000, label: "Class 4", color: "text-orange-600", bg: "bg-orange-100", tagColor: "#FFA500", thickness: "5mm+", application: "Very High Voltage, 33kV" }
+        ];
+
+        const App = () => {
+            const [voltage, setVoltage] = useState(400); // Default 400V (3-phase)
+            const [panelWidth, setPanelWidth] = useState(600); // mm
+            const [unit, setUnit] = useState('mm'); // mm or feet
+            const [selectedClass, setSelectedClass] = useState(null);
+
+            // Calculate required class based on voltage
+            useEffect(() => {
+                const required = IEC_CLASSES.find(c => c.maxUseVoltage >= voltage);
+                // If voltage is higher than Class 4 (36kV), we default to Class 4 but warn user
+                setSelectedClass(required || { ...IEC_CLASSES[4], warning: true });
+            }, [voltage]);
+
+            const handleWidthChange = (val) => {
+                if (unit === 'feet') {
+                    setPanelWidth(val * 304.8); // Convert feet to mm for internal logic
+                } else {
+                    setPanelWidth(val);
+                }
+            };
+
+            const getDisplayWidth = () => {
+                return unit === 'feet' ? (panelWidth / 304.8).toFixed(1) : panelWidth;
+            };
+
+            const getMatWidth = () => {
+                // Mat should generally be at least as wide as the panel, often slightly wider for safety
+                // Standard rule: Full width of the live parts/panel
+                return Math.max(panelWidth, 600); // Minimum 600mm width generally
+            };
+
+            const getMatDepth = () => {
+                // Standard depth for operator safety is usually 1 meter (1000mm)
+                return 1000;
+            };
+
+            const copyToClipboard = () => {
+                if (!selectedClass) return;
+                const width = getMatWidth();
+                const depth = getMatDepth();
+                const text = `Electrical Insulation Mat Requirement:\nStandard: IEC 61111\nVoltage Rating: ${selectedClass.label} (Max Working ${selectedClass.maxUseVoltage}V)\nMin Thickness: ${selectedClass.thickness}\nDimensions: ${width}mm (W) x ${depth}mm (D)\nApplication: Accord Pakistan / Safety Compliance`;
+                
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    alert("Specification copied to clipboard!");
+                } catch (err) {
+                    console.error('Failed to copy', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 flex justify-center items-start">
+                    <div className="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                        
+                        {/* Header */}
+                        <div className="bg-slate-900 text-white p-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-2xl font-bold flex items-center gap-2">
+                                        <i className="fas fa-shield-alt text-yellow-400"></i>
+                                        Accord Mat Selector
+                                    </h1>
+                                    <p className="text-slate-400 text-sm mt-1">IEC 61111 Compliance Tool for Electrical DBs</p>
+                                </div>
+                                <div className="hidden md:block text-right">
+                                    <span className="bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded uppercase">Safety First</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+                            
+                            {/* Input Section */}
+                            <div className="p-6 md:p-8 space-y-8 border-r border-gray-100">
+                                
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-3">
+                                        <i className="fas fa-bolt text-yellow-500 mr-2"></i>
+                                        System Voltage (Volts)
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <button 
+                                            onClick={() => setVoltage(220)}
+                                            className={`p-2 rounded border text-sm transition-colors ${voltage === 220 ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            220V (Single Phase)
+                                        </button>
+                                        <button 
+                                            onClick={() => setVoltage(400)}
+                                            className={`p-2 rounded border text-sm transition-colors ${voltage === 400 ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            400V (3-Phase)
+                                        </button>
+                                        <button 
+                                            onClick={() => setVoltage(11000)}
+                                            className={`p-2 rounded border text-sm transition-colors ${voltage === 11000 ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            11kV (HT Panel)
+                                        </button>
+                                        <button 
+                                            onClick={() => setVoltage(33000)}
+                                            className={`p-2 rounded border text-sm transition-colors ${voltage === 33000 ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                        >
+                                            33kV (Grid)
+                                        </button>
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            value={voltage} 
+                                            onChange={(e) => setVoltage(Number(e.target.value))}
+                                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none pl-3 pr-12"
+                                        />
+                                        <span className="absolute right-4 top-3 text-gray-400 text-sm font-semibold">V</span>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">Enter the maximum Phase-to-Phase voltage of the DB.</p>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-3">
+                                        <label className="block text-sm font-semibold text-gray-700">
+                                            <i className="fas fa-ruler-horizontal text-blue-500 mr-2"></i>
+                                            DB / Panel Width
+                                        </label>
+                                        <div className="flex bg-gray-100 rounded p-1">
+                                            <button onClick={() => setUnit('mm')} className={`px-2 py-1 text-xs rounded ${unit === 'mm' ? 'bg-white shadow text-black' : 'text-gray-500'}`}>mm</button>
+                                            <button onClick={() => setUnit('feet')} className={`px-2 py-1 text-xs rounded ${unit === 'feet' ? 'bg-white shadow text-black' : 'text-gray-500'}`}>ft</button>
+                                        </div>
+                                    </div>
+                                    <input 
+                                        type="number" 
+                                        value={getDisplayWidth()} 
+                                        onChange={(e) => handleWidthChange(e.target.value)}
+                                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-2">Total width of the Distribution Board.</p>
+                                </div>
+
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                    <h3 className="text-blue-800 font-bold text-sm mb-1"><i className="fas fa-info-circle mr-1"></i> Why this matters for Accord?</h3>
+                                    <p className="text-blue-700 text-xs leading-relaxed">
+                                        Accord inspections (CAP) frequently flag <strong>"Inadequate Insulation Mats"</strong>. 
+                                        Common errors include using thin generic rubber (non-rated) or mats that are too small to stand on while operating the DB. 
+                                        Always use <strong>IEC 61111</strong> certified mats.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            {/* Result Section */}
+                            <div className="bg-gray-50 p-6 md:p-8 flex flex-col justify-between">
+                                
+                                {selectedClass && (
+                                    <div className="space-y-6">
+                                        
+                                        {/* Class Result */}
+                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div>
+                                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Required Standard</span>
+                                                    <h2 className="text-3xl font-bold text-slate-800 mt-1">IEC 61111</h2>
+                                                </div>
+                                                <div className={`px-4 py-2 rounded-lg ${selectedClass.bg} flex flex-col items-center border border-gray-200`}>
+                                                    <span className="text-xs font-bold uppercase text-gray-500">Class</span>
+                                                    <span className={`text-2xl font-bold ${selectedClass.color}`}>{selectedClass.class}</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between text-sm py-2 border-b border-gray-100">
+                                                    <span className="text-gray-500">Working Voltage Limit</span>
+                                                    <span className="font-bold text-slate-700">{selectedClass.maxUseVoltage.toLocaleString()} Volts</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm py-2 border-b border-gray-100">
+                                                    <span className="text-gray-500">Typical Thickness</span>
+                                                    <span className="font-bold text-slate-700">{selectedClass.thickness}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm py-2 items-center">
+                                                    <span className="text-gray-500">IEC Color Tag</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs text-gray-400">(Look for this tag)</span>
+                                                        <div 
+                                                            className="w-6 h-6 rounded-full border border-gray-300 shadow-sm"
+                                                            style={{ backgroundColor: selectedClass.tagColor }}
+                                                        ></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Dimensions Result */}
+                                        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-8 -mt-8"></div>
+                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider relative z-10">Required Dimensions</span>
+                                            
+                                            <div className="flex items-center gap-4 mt-4 relative z-10">
+                                                <div className="flex-1">
+                                                    <div className="text-xs text-gray-500 mb-1">Width (Along DB)</div>
+                                                    <div className="text-xl font-bold text-slate-800">
+                                                        {getMatWidth()} mm
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">{(getMatWidth()/304.8).toFixed(1)} ft</div>
+                                                </div>
+                                                <div className="h-10 w-px bg-gray-200"></div>
+                                                <div className="flex-1">
+                                                    <div className="text-xs text-gray-500 mb-1">Depth (Walkway)</div>
+                                                    <div className="text-xl font-bold text-slate-800">
+                                                        {getMatDepth()} mm
+                                                    </div>
+                                                    <div className="text-xs text-gray-400">{(getMatDepth()/304.8).toFixed(1)} ft</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Visualizer */}
+                                            <div className="mt-6 pt-4 border-t border-gray-100">
+                                                <div className="text-xs text-gray-400 mb-2 text-center">Top Down View</div>
+                                                <div className="flex flex-col items-center">
+                                                    {/* DB */}
+                                                    <div 
+                                                        className="h-4 bg-slate-800 rounded-t flex items-center justify-center text-[10px] text-white overflow-hidden transition-all duration-300"
+                                                        style={{ width: '100%', maxWidth: '250px' }}
+                                                    >
+                                                        DB Panel ({getDisplayWidth()} {unit})
+                                                    </div>
+                                                    {/* Mat */}
+                                                    <div 
+                                                        className="bg-slate-700 mat-pattern transition-all duration-300 rounded-b shadow-lg flex items-center justify-center relative"
+                                                        style={{ 
+                                                            width: '100%', 
+                                                            maxWidth: '250px',
+                                                            height: '80px',
+                                                            marginTop: '2px'
+                                                        }}
+                                                    >
+                                                        <span className="bg-black/50 text-white text-[10px] px-2 py-1 rounded backdrop-blur-sm">
+                                                            Rubber Mat
+                                                        </span>
+                                                        {/* Person icon standing */}
+                                                        <div className="absolute bottom-[-10px] text-blue-500 text-2xl drop-shadow-md">
+                                                            <i className="fas fa-shoe-prints transform rotate-[-90deg]"></i>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button 
+                                            onClick={copyToClipboard}
+                                            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 shadow-lg"
+                                        >
+                                            <i className="fas fa-copy"></i> Copy Specification for PO
+                                        </button>
+
+                                    </div>
+                                )}
+
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="fixed bottom-4 right-4 bg-white p-2 rounded shadow text-xs text-gray-400 opacity-70 hover:opacity-100">
+                         Based on IEC 61111:2009 Standards
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
